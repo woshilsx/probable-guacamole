@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>主页</title>
+  <style>
+    /* 设置页面背景 */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+    }
+
+    /* 背景设置 */
+    body {
+      background-image: url('../../../../photo/3.jpg'); /* 替换为有效的背景图路径 */
+      background-size: cover;
+      background-position: center;
+      position: relative;
+    }
+
+    header {
+      position: absolute;
+      width: 100%;
+      padding: 40px;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      top: 0;
+      z-index: 1;
+    }
+
+    .profile img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .profile p {
+      margin: 0;
+      position: relative;
+      left:25px;
+      font-size: 40px;
+
+    }
+
+    .game-button button {
+      padding: 40px 80px;
+      font-size: 40px;
+      cursor: pointer;
+      background-color: hsla(197, 71%, 73%, 0.9);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      position: relative;
+      right:30px;
+    }
+
+    /* 游戏区域 */
+    #movementArea {
+      position: absolute;
+      top: 80px; /* 距离 header 的高度 */
+      width: 100%;
+      height: calc(100vh - 80px); /* 除去头部区域 */
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    /* 角色设置 */
+    #character {
+      position: absolute;
+      width: 100px;
+      height: 140px;
+      cursor: pointer;
+      left: 700px;
+      top: 400px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="profile">
+    <img id="user-avatar" alt="User Avatar" onclick="goToUserPage()" />
+    <p id="user-username"></p>
+  </div>
+  <div class="game-button">
+    <button id="gameButton" onclick="startGame()">开始游戏</button>
+  </div>
+</header>
+
+<main>
+  <div id="movementArea">
+    <img id="character" src="../../../../photo/2.png" alt="Character">
+  </div>
+</main>
+
+<script>
+  // 用户页面跳转函数
+  function goToUserPage() {
+    window.location.href = 'userPage.html';
+  }
+
+  let db;
+
+  // 打开数据库
+  const request = indexedDB.open("userDB", 1);
+
+  request.onerror = function(event) {
+      console.error("Error opening database:", event.target.errorCode);
+  };
+
+  request.onsuccess = function(event) {
+      db = event.target.result;
+      console.log("Database opened successfully");
+      displayLastLoggedInUser(); // 成功打开数据库后显示用户资料
+  };
+
+  request.onupgradeneeded = function(event) {
+      db = event.target.result;
+      console.log("Database and object store created or upgraded");
+  };
+
+  // 从 IndexedDB 获取并显示上次登录的用户资料
+  function displayLastLoggedInUser() {
+      const lastLoggedInUserId = parseInt(localStorage.getItem('lastLoggedInUserId'), 10);
+
+      if (isNaN(lastLoggedInUserId)) {
+          console.log("No user is logged in.");
+          return;
+      }
+
+      const transaction = db.transaction(["users"], "readonly");
+      const objectStore = transaction.objectStore("users");
+      const request = objectStore.get(lastLoggedInUserId); // 使用上次登录的 userId 获取用户数据
+
+      request.onsuccess = function(event) {
+          const user = event.target.result;
+
+          if (user) {
+              // 显示头像和用户名
+              document.getElementById("user-avatar").src = user.avatar;
+              document.getElementById("user-username").innerText = user.username;
+          } else {
+              console.log("User not found.");
+              document.getElementById("user-avatar").src = '../photo/3.png'; // 用户未找到时显示默认头像
+              document.getElementById("user-username").innerText = '用户未找到';
+          }
+      };
+
+      request.onerror = function(event) {
+          console.error("Error retrieving user data:", event.target.errorCode);
+      };
+  }
+  // 游戏开始函数
+  function startGame() {
+    window.location.href = 'youxi.html';
+  }
+
+  // 角色移动功能
+  document.addEventListener('DOMContentLoaded', function () {
+    const character = document.getElementById('character');
+    const movementArea = document.getElementById('movementArea');
+
+    let offsetX, offsetY, isDragging = false;
+
+    character.addEventListener('mousedown', function (e) {
+      offsetX = e.clientX - character.offsetLeft;
+      offsetY = e.clientY - character.offsetTop;
+      isDragging = true;
+
+      document.body.style.userSelect = 'none'; // 禁止选中
+    });
+
+    document.addEventListener('mousemove', function (e) {
+      if (isDragging) {
+        let newX = e.clientX - offsetX;
+        let newY = e.clientY - offsetY;
+
+        const maxX = movementArea.clientWidth - character.offsetWidth;
+        const maxY = movementArea.clientHeight - character.offsetHeight;
+
+        newX = Math.max(0, Math.min(newX, maxX));
+        newY = Math.max(0, Math.min(newY, maxY));
+
+        character.style.left = `${newX}px`;
+        character.style.top = `${newY}px`;
+      }
+    });
+
+    document.addEventListener('mouseup', function () {
+      isDragging = false;
+      document.body.style.userSelect = ''; // 恢复选中功能
+    });
+  });
+</script>
+
+</body>
+</html>

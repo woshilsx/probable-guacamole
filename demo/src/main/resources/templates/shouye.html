@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>棋局对弈</title>
+    <style>
+        body, html {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          overflow: hidden;
+          font-family: Arial, sans-serif;
+        }
+
+        .background-container {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-image: url("../../../../photo/1.jpg");
+          background-size: cover;
+          background-color: #f0f0f0;
+          transition: filter 0.5s ease;
+          filter: blur(0);
+          z-index: -1;
+        }
+
+        .background-container.blur {
+          filter: blur(5px);
+        }
+
+        .content-container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 350px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    opacity: 1;  /* 设置为1，使其初始可见 */
+    transform: translateY(0);  /* 去除初始的偏移 */
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+        body.show-form .content-container {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .text-container {
+            font-size: 16px;
+        }
+
+        .login-form input[type="text"],
+        .login-form input[type="password"],
+        .login-form input[type="file"] {
+            margin-bottom: 10px;
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .login-form button {
+            margin-top: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .login-options {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .login-options button {
+            width: 48%;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .login-options #login-btn {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .login-options #register-btn {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            font-size: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="background-container"></div>
+
+<div class="content-container">
+    <div class="login-form">
+        <form id="login-form">
+            <!-- 登录和注册按钮切换 -->
+            <div class="login-options">
+                <button type="button" id="login-btn" onclick="showLogin()">登录</button>
+                <button type="button" id="register-btn" onclick="showRegister()">注册</button>
+            </div>
+
+            <!-- 登录表单 -->
+            <div id="login-fields">
+                用户名：<input type="text" name="uid" id="uid" placeholder="请输入用户名">
+                <br><br>
+                密码：<input type="password" name="password" id="password" placeholder="请输入密码">
+                <br><br>
+                <button type="button" onclick="loginFunction()">登录</button>
+            </div>
+
+            <!-- 注册表单 -->
+            <div id="register-fields" style="display: none;">
+                昵称：<input type="text" name="nickname" id="nickname" placeholder="请输入昵称">
+                <br><br>
+                密码：<input type="password" name="password" id="register-password" placeholder="请输入密码">
+                <br><br>
+                选择头像：<input type="file" name="avatar" id="avatar" accept="image/*">
+                <br><br>
+                <button type="button" onclick="registerFunction()">注册</button>
+            </div>
+
+            <!-- 错误信息显示 -->
+            <div class="error-message" id="error-message"></div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // 模拟用户数据存储（一般会存储在数据库中）
+    let users = [
+        { id: 10000, username: "user1", password: "password123", nickname: "User One", avatar: "" }
+    ];
+
+    // 切换到登录表单
+    function showLogin() {
+        document.getElementById("login-fields").style.display = "block";
+        document.getElementById("register-fields").style.display = "none";
+    }
+
+    // 切换到注册表单
+    function showRegister() {
+        document.getElementById("login-fields").style.display = "none";
+        document.getElementById("register-fields").style.display = "block";
+    }
+
+    // 登录功能
+    function loginFunction() {
+        const username = document.getElementById("uid").value;
+        const password = document.getElementById("password").value;
+        const user = users.find(u => u.username === username);
+
+        if (user && user.password === password) {
+            alert("登录成功！");
+            window.location.href = "zhuye.html";
+        } else {
+            document.getElementById("error-message").innerText = "用户名或密码错误！";
+        }
+    }
+
+    // 注册功能
+    function registerFunction() {
+        const nickname = document.getElementById("nickname").value;
+        const password = document.getElementById("register-password").value;
+        const avatar = document.getElementById("avatar").files[0];
+
+        if (nickname && password) {
+            // 自动分配 ID
+            const newId = users[users.length - 1].id + 1;
+
+            // 创建新用户
+            const newUser = {
+                id: newId,
+                username: "user" + newId, // 自动生成用户名
+                password: password,
+                nickname: nickname,
+                avatar: avatar ? URL.createObjectURL(avatar) : ""
+            };
+
+            users.push(newUser);
+            alert("注册成功，您的用户名是：" + newUser.username);
+
+            // 重置表单并切换回登录
+            document.getElementById("nickname").value = "";
+            document.getElementById("register-password").value = "";
+            document.getElementById("avatar").value = "";
+            showLogin();
+        } else {
+            document.getElementById("error-message").innerText = "昵称和密码不能为空！";
+        }
+    }
+</script>
+
+</body>
+</html>

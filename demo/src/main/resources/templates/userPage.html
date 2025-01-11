@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人主页</title>
+    <style>
+        /* 全局设置 */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 主容器 */
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 侧边栏样式 */
+        .sidebar {
+            width: 250px;
+            background-color: #3a3a3a;
+            color: white;
+            padding: 30px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-radius: 12px;
+        }
+
+        .sidebar-item {
+            padding: 15px;
+            margin: 10px 0;
+            background-color: #5c5c5c;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar-item:hover {
+            background-color: #777;
+        }
+
+        /* 内容区域样式 */
+        .content {
+            flex: 1;
+            padding: 30px;
+            background-color: white;
+            border-radius: 12px;
+            margin-left: 20px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .content-item {
+            display: none;
+        }
+
+        h2 {
+            font-size: 2em;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            font-size: 1.2em;
+            margin-top: 20px;
+        }
+
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            color: #333;
+            background-color: #f9f9f9;
+            box-sizing: border-box;
+        }
+
+        input:disabled {
+            background-color: #e6e6e6;
+        }
+
+        /* 按钮样式 */
+        button {
+            padding: 12px 20px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* 战绩列表样式 */
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        li {
+            padding: 12px;
+            margin: 8px 0;
+            background-color: #fafafa;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        img {
+            border-radius: 50%;
+            margin-top: 10px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .sidebar {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+
+            .content {
+                margin-left: 0;
+            }
+
+            .sidebar-item {
+                font-size: 1.2em;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            input, select {
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- 左侧侧边栏 -->
+    <div class="sidebar">
+        <div id="userInfoBtn" class="sidebar-item">用户信息</div>
+        <div id="battleRecordBtn" class="sidebar-item">战绩</div>
+    </div>
+
+    <!-- 右侧显示区域 -->
+    <div class="content">
+        <div id="userInfoContent" class="content-item">
+            <h2>用户信息</h2>
+            <div class="form-group">
+                <label for="username">名字:</label>
+                <input type="text" id="username">
+            </div>
+            <div class="form-group">
+                <label for="gender">性别:</label>
+                <input type="text" id="gender" readonly>
+            </div>
+            <div class="form-group">
+                <label for="signature">个性签名:</label>
+                <input type="text" id="signature">
+            </div>
+            <div class="form-group">
+                <label for="avatar">头像:</label>
+                <input type="file" id="avatar" accept="image/*">
+            </div>
+            <button id="saveUserInfoBtn">保存修改</button>
+            <h3>当前头像:</h3>
+            <img id="userAvatar" src="" alt="Avatar" width="120">
+        </div>
+
+        <div id="battleRecordContent" class="content-item">
+            <h2>战绩</h2>
+            <ul id="battleRecordList"></ul>
+            <button id="addBattleRecordBtn">添加战绩</button>
+        </div>
+    </div>
+</div>
+<script>
+    let db;
+
+    // 打开数据库
+    const request = indexedDB.open("userDB", 2); // 增加版本号以确保onupgradeneeded触发
+
+    request.onerror = function (event) {
+        console.error("Error opening database:", event.target.errorCode);
+    };
+
+    request.onsuccess = function (event) {
+        db = event.target.result;
+        console.log("Database opened successfully");
+        loadUserInfo(); // 加载用户信息
+        loadBattleRecords(); // 加载战绩
+    };
+
+    request.onupgradeneeded = function (event) {
+        db = event.target.result;
+        console.log("Upgrading or creating database...");
+
+        // 创建 users 存储空间
+        if (!db.objectStoreNames.contains("users")) {
+            const userStore = db.createObjectStore("users", { keyPath: "id", autoIncrement: true });
+            userStore.createIndex("username", "username", { unique: true });
+            userStore.createIndex("avatar", "avatar", { unique: false });
+            console.log("Created 'users' object store.");
+        }
+
+        // 创建 battleRecords 存储空间
+        if (!db.objectStoreNames.contains("battleRecords")) {
+            const battleStore = db.createObjectStore("battleRecords", { keyPath: "id", autoIncrement: true });
+            battleStore.createIndex("userId", "userId", { unique: false });
+            battleStore.createIndex("timestamp", "timestamp", { unique: false });
+            console.log("Created 'battleRecords' object store.");
+        }
+    };
+
+    // 监听用户信息和战绩按钮点击
+    document.getElementById("userInfoBtn").addEventListener("click", () => {
+        showContent("userInfoContent");
+    });
+    document.getElementById("battleRecordBtn").addEventListener("click", () => {
+        showContent("battleRecordContent");
+    });
+
+    // 显示对应的内容
+    function showContent(contentId) {
+        document.querySelectorAll(".content-item").forEach(item => item.style.display = "none");
+        document.getElementById(contentId).style.display = "block";
+    }
+
+    // 获取当前登录用户的 ID
+    function getCurrentUserId() {
+        const lastLoggedInUserId = parseInt(localStorage.getItem('lastLoggedInUserId'), 10);
+
+        if (isNaN(lastLoggedInUserId)) {
+            alert("未登录或无法获取用户ID！");
+            return null;
+        }
+        return lastLoggedInUserId; // 已经是整数，不需要再次 parseInt
+    }
+
+    // 加载并显示用户信息
+    function loadUserInfo() {
+        const userId = getCurrentUserId();
+        if (userId === null) {
+            return;
+        }
+
+        const transaction = db.transaction(["users"], "readonly");
+        const objectStore = transaction.objectStore("users");
+        const request = objectStore.get(userId); // 使用当前用户 ID 获取信息
+
+        request.onsuccess = function (event) {
+            const user = event.target.result;
+            if (user) {
+                // 更新页面中的用户信息
+                document.getElementById("username").value = user.username;
+                document.getElementById("gender").value = user.gender === "male" ? "男" : user.gender === "female" ? "女" : "其他";
+                document.getElementById("signature").value = user.signature || '';
+                document.getElementById("userAvatar").src = user.avatar || '../photo/default-avatar.png'; // 默认头像
+                console.log("用户信息加载成功:", user);
+            } else {
+                console.log("用户信息未找到");
+                alert("用户信息未找到，请重新登录！");
+            }
+        };
+
+        request.onerror = function (event) {
+            console.error("读取用户信息失败", event.target.error);
+        };
+    }
+
+    // 保存用户信息（修改原有记录）
+    document.getElementById("saveUserInfoBtn").addEventListener("click", function () {
+        const userId = getCurrentUserId(); // 动态获取用户 ID
+        if (userId === null) return; // 如果获取不到 ID，停止保存
+
+        const username = document.getElementById("username").value.trim();
+        const signature = document.getElementById("signature").value.trim();
+        const avatarFile = document.getElementById("avatar").files[0];
+
+        if (!username) {
+            alert("用户名不能为空！");
+            return;
+        }
+
+        console.log("准备保存用户信息:", { userId, username, signature, avatarFile });
+
+        if (avatarFile) {
+            console.log("检测到头像文件，开始读取...");
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+                console.log("头像读取成功:", event.target.result.slice(0, 50) + '...'); // 仅显示前50字符
+                const avatarDataURL = event.target.result;
+
+                // 开启新的事务来更新用户信息
+                const updateTransaction = db.transaction(["users"], "readwrite");
+                const userStore = updateTransaction.objectStore("users");
+                const getRequest = userStore.get(userId);
+
+                getRequest.onsuccess = function (event) {
+                    const user = event.target.result;
+                    if (user) {
+                        user.username = username;
+                        user.signature = signature;
+                        user.avatar = avatarDataURL;
+
+                        const updateRequest = userStore.put(user);
+
+                        updateRequest.onsuccess = function () {
+                            alert("用户信息已保存！");
+                            console.log("用户信息保存成功:", user);
+                            loadUserInfo(); // 更新用户信息显示
+                        };
+
+                        updateRequest.onerror = function (event) {
+                            console.error("保存用户信息失败", event.target.error);
+                            alert("保存用户信息失败，请重试！");
+                        };
+                    } else {
+                        console.log("未找到用户信息，无法更新");
+                        alert("未找到用户信息，无法更新");
+                    }
+                };
+
+                getRequest.onerror = function (event) {
+                    console.error("读取用户信息失败", event.target.error);
+                    alert("读取用户信息失败，请重试！");
+                };
+            };
+
+            reader.onerror = function (event) {
+                console.error("读取头像文件失败", event);
+                alert("读取头像文件失败，请重试！");
+            };
+
+            reader.readAsDataURL(avatarFile);
+        } else {
+            // 如果没有上传头像，则直接更新用户名和签名
+            console.log("未检测到头像文件，直接更新用户名和签名");
+
+            const updateTransaction = db.transaction(["users"], "readwrite");
+            const userStore = updateTransaction.objectStore("users");
+            const getRequest = userStore.get(userId);
+
+            getRequest.onsuccess = function (event) {
+                const user = event.target.result;
+                if (user) {
+                    user.username = username;
+                    user.signature = signature;
+                    // 不修改 avatar
+
+                    const updateRequest = userStore.put(user);
+
+                    updateRequest.onsuccess = function () {
+                        alert("用户信息已保存！");
+                        console.log("用户信息保存成功:", user);
+                        loadUserInfo(); // 更新用户信息显示
+                    };
+
+                    updateRequest.onerror = function (event) {
+                        console.error("保存用户信息失败", event.target.error);
+                        alert("保存用户信息失败，请重试！");
+                    };
+                } else {
+                    console.log("未找到用户信息，无法更新");
+                    alert("未找到用户信息，无法更新");
+                }
+            };
+
+            getRequest.onerror = function (event) {
+                console.error("读取用户信息失败", event.target.error);
+                alert("读取用户信息失败，请重试！");
+            };
+        }
+    });
+
+    // 加载并显示战绩（示例，假设我们展示一个简单列表）
+    function loadBattleRecords() {
+        const userId = getCurrentUserId();
+        if (userId === null) {
+            return;
+        }
+
+        const transaction = db.transaction(["battleRecords"], "readonly");
+        const objectStore = transaction.objectStore("battleRecords");
+        const index = objectStore.index("userId");
+        const request = index.getAll(IDBKeyRange.only(userId)); // 只获取当前用户的战绩
+
+        request.onsuccess = function (event) {
+            const battleRecords = event.target.result;
+            const battleList = document.getElementById("battleRecordList");
+            battleList.innerHTML = ""; // 清空战绩列表
+
+            if (battleRecords.length === 0) {
+                battleList.innerHTML = "<li>暂无战绩</li>";
+            } else {
+                battleRecords.forEach(record => {
+                    const listItem = document.createElement("li");
+                    listItem.innerText = `战斗时间：${record.timestamp}, 结果：${record.result}`;
+                    battleList.appendChild(listItem);
+                });
+            }
+            console.log("战绩加载完成:", battleRecords);
+        };
+
+        request.onerror = function (event) {
+            console.error("加载战绩失败", event.target.error);
+        };
+    }
+
+    // 添加战绩（示例功能）
+    document.getElementById("addBattleRecordBtn").addEventListener("click", function () {
+        const userId = getCurrentUserId();
+        if (userId === null) {
+            alert("未登录或无法获取用户ID！");
+            return;
+        }
+
+        const timestamp = new Date().toISOString();
+        const result = "胜利"; // 示例结果，实际应用中可以通过表单输入
+
+        const transaction = db.transaction("battleRecords", "readwrite");
+        const battleStore = transaction.objectStore("battleRecords");
+
+        const battleRecord = {
+            userId: userId,
+            timestamp: timestamp,
+            result: result
+        };
+
+        const request = battleStore.add(battleRecord);
+
+        request.onsuccess = function () {
+            alert("战绩已添加！");
+            console.log("战绩添加成功:", battleRecord);
+            loadBattleRecords(); // 更新战绩列表
+        };
+
+        request.onerror = function (event) {
+            console.error("添加战绩失败", event.target.error);
+            alert("添加战绩失败，请重试！");
+        };
+    });
+</script>
+</body>
+</html>

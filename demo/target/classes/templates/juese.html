@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="=device-width, initial-scale=1.0">
+  <title>鼓励角色</title>
+  <style>
+    /* 角色图片容器样式 */
+   .character {
+        width: 150px;
+        height: 150px;
+        margin: 100px auto;
+        cursor: pointer;
+    }
+
+    /* 确保图片填满容器 */
+    img {
+        width: 80%;
+        height: 100%;
+    }
+
+    /* 对话框样式 */
+   .dialog {
+        position: absolute;
+        top: 50px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #fefefe;
+        padding: 10px 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        display: none;
+        white-space: nowrap;
+    }
+  </style>
+</head>
+
+<body>
+<div class="character">
+  <img src="../../../../photo/2.png" alt="角色图片1" id="characterImg">
+  <div class="dialog" id="dialog">
+  </div>
+</div>
+<script>
+  // 获取角色图片元素以及对话框元素
+  const characterImg = document.getElementById('characterImg');
+  const dialog = document.getElementById('dialog');
+  // 配置语音文件路径和对应的鼓励话语，你需要提前准备好这些语音文件（路径按实际情况填写）
+  const audioFilesAndWords = [
+    {
+      word: "你很棒哦！",
+      audioPath: "path/to/you_are_great.mp3"
+    },
+    {
+      word: "加油呀，你可以的！",
+      audioPath: "path/to/come_on.mp3"
+    },
+    {
+      word: "相信自己，没问题的！",
+      audioPath: "path/to/believe_yourself.mp3"
+    },
+    {
+      word: "今天又是美好的一天，继续努力呀！",
+      audioPath: "path/to/keep_working.mp3"
+    }
+  ];
+
+  // 用于标记对话框是否正在显示
+  let isDialogShown = false;
+
+  // 点击角色图片时播放对应的语音并显示话语
+  characterImg.addEventListener('click', function () {
+    if (isDialogShown) {
+      // 如果对话框已显示，隐藏对话框并重置标记
+      dialog.style.display = 'none';
+      isDialogShown = false
+      return;
+    }
+    const randomIndex = Math.floor(Math.random() * audioFilesAndWords.length);
+    const selected = audioFilesAndWords[randomIndex];
+    const audio = new Audio(selected.audioPath);
+    dialog.textContent = selected.word;
+    dialog.style.display = 'block';
+    isDialogShown = true;
+    audio.play();
+    // 3秒后（可根据需求调整时间）自动隐藏对话框
+    setTimeout(() => {
+      dialog.style.display = 'none';
+      isDialogShown = false;
+    }, 3000);
+  });
+</script>
+</body>
+
+</html>

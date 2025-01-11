@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Welcome Page</title>
+</head>
+<body>
+Welcome,
+<div th:if="${user}" th:text="${user.getUsername()}"></div>
+
+<a href="/logout">退出系统</a>
+</body>
+</html>
